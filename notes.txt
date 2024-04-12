@@ -1,0 +1,48 @@
+// stories
+** create a chat with serverless groupchat
+send and recv msgs
+send and recv files
+** secure login
+** contact list
+offline/online chat view
+
+// Modules
+- Discovery & Login
+- session connection
+- chat
+- file exchange
+- local db
+- offline synch
+
+// messages between devices, use DOCKER FOR TEST!!!
+
+
+Structure
+// define a client
+    -- name, ID, IPaddr, port, cache{}
+    -- discoverUsers() // through broadcast BFS
+    -- createSession(client2)
+    -- disconnect()
+
+ // define session (2+ clients in chat)
+    -- isSessionLive
+    -- canSaveMessages (default TRUE)
+    -- clients[]
+    -- sessionMessages
+
+// define messages
+    -- clientID
+    -- TEXT
+
+// define login ->  login good: recv cache data, 
+                            else create new cache
+    -- username, password_hash
+    -- hash_function()
+
+// define cache
+    -- clients[]
+    -- sessions
+    -- messages
+    
+
+
