@@ -10,7 +10,7 @@ def test_login():
 
 if __name__ == "__main__":
     # Server IP address and port
-    server_address = ("10.239.55.54", 8889)
+    server_address = (socket.gethostbyname(socket.gethostname(), 8889)
 
     # Create a UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
