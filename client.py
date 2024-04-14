@@ -96,28 +96,34 @@ class Client:
 
     def recvMsg(self):
         self.socket.bind((self.ipaddr, self.ipport))
-        print(f"UDP {self.ipaddr}:{self.ipport}")
+        # print(f"UDP {self.ipaddr}:{self.ipport}")
         try:
             while True:
                 print("waiting for data...")
-                data, addr = self.socket.recvfrom(4096)
+                dataBytes, addr = self.socket.recvfrom(4096)
+                data = dataBytes.decode()
+
                 if not data:
                     print('No more data from', addr)
+
+                print('Received:', data)
+
                 if data == "__discover__":
                     info = {"user":self.user, "ipaddr":self.ipaddr, "neighbors":self.neighbors}
                     json_msg = json.dumps(info)
                     self.socket.sendto(json_msg.encode(), addr)
-                print('Received:', data.decode())
+                    self.sendMsg(json_msg, addr)
+                if "TESTEC530" in data:
+                    self.sendMsg(" ".join(data.split(" ")[1::]), addr)
         except KeyboardInterrupt:
             self.socket.close()
 
 
     def sendMsg(self, message, sendTo):
         # Create a socket object
-        while True:
-            print("sending message")
-            self.socket.sendto("message".encode(), ("192.168.99.105", self.ipport))
-            time.sleep(2)
+        print(f"sending message: {message}")
+        self.socket.sendto(message.encode(), sendTo)
+            
 
     # THREAD THE CONNECTION PORT
     def __connect__(self):
@@ -139,6 +145,7 @@ class Client:
 
         while True:
             print("enter a command:", "\n\t".join(list(commands.keys())))
+            print('\n')
             cmd = input()
 
             if cmd == "msg":
