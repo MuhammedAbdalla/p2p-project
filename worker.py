@@ -21,15 +21,18 @@ class Worker(DatagramProtocol):
         print(addr, ":", message)
 
         if message["header"] == "__INIT__":
-            self.updateClients()
-            self.clients.add(addr)
-            
-            while len(self.ping) > 0:
-                time.sleep(0.1)
+            def init():
+                self.updateClients()
+                print(self.ping)
+                while len(self.ping) > 0:
+                    time.sleep(0.25)
+                
+                self.clients.add(addr)
 
-            addresses = self.returnClients(addr)
+                addresses = self.returnClients(addr)
+                self.sendMessage("__CONNECT__", addresses, addr)
 
-            self.sendMessage("__CONNECT__", addresses, addr)
+            reactor.callInThread(init)
         elif message["header"] == "__OK__":
             print(f"ping received from {addr}")
             self.ping.remove(addr)

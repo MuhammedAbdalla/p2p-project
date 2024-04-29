@@ -75,21 +75,24 @@ class Client(DatagramProtocol):
                 w_addr = None
                 w_port = None
 
-                while w_addr == None and w_port == None:
-                    try:
-                        w_addr = input("write address: ")
-                        w_port = int(input("write port: "))
-                    except Exception as e:
-                        if isinstance(e, EOFError):
-                            print("Input EOFError")
-                            return
-                        
-                        w_addr = None
-                        w_port = None
+                def connectTo():
+                    while w_addr == None and w_port == None:
+                        try:
+                            w_addr = input("write address: ")
+                            w_port = int(input("write port: "))
+                            
+                        except Exception as e:
+                            if isinstance(e, EOFError):
+                                print("Input EOFError")
+                                return
+                            
+                            w_addr = None
+                            w_port = None
 
-                        continue
-                    break
+                            continue
+                        break
                     
+                reactor.callInThread(connectTo)
 
                 # sanitize input
                 self.address = (w_addr, w_port)
@@ -101,7 +104,7 @@ class Client(DatagramProtocol):
                     reactor.callInThread(self.sendCoRoutine)
 
             elif message["header"] == "__PING__":
-                handle = partial(self.sendMessage, "__OK__", self.online, self.address)
+                handle = partial(self.sendMessage, "__OK__", self.online, addr)
                 reactor.callInThread(handle)
 
         else:
