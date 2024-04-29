@@ -1,0 +1,11 @@
+# p2p gitignore
+
+# any folder with __pycache__/, .pytest_cache/ and logs/
+__pycache__/
+.pytest_cache/
+.venv/
+logs/
+old/
+
+
+!requirements.txt
