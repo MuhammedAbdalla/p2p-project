@@ -4,14 +4,15 @@ from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 from functools import partial
 import json
+import time
 
 
 class Worker(DatagramProtocol):
     def __init__(self):
         self.clients = set()
-        self.clientObjs = set()
         self.cache = {}
         self.chats = {}
+        self.ping = set()
     
 
     def datagramReceived(self, datagram, addr):
@@ -23,17 +24,22 @@ class Worker(DatagramProtocol):
             self.updateClients()
             self.clients.add(addr)
             
+            while len(self.ping) > 0:
+                time.sleep(0.1)
+
             addresses = self.returnClients(addr)
 
             self.sendMessage("__CONNECT__", addresses, addr)
+        elif message["header"] == "__OK__":
+            print(f"ping received from {addr}")
+            self.ping.remove(addr)
+            
 
-
+            
     def updateClients(self):
         for a in self.clients:
-            b = self.sendMessage("__PING__", "", a)
-            print(a, b)
-            if b == False:
-                self.clients.remove(a)
+            self.sendMessage("__PING__", "", a)
+            self.ping.add(a)
 
 
     def returnClients(self, addr):
@@ -49,9 +55,18 @@ class Worker(DatagramProtocol):
             # package message into a json and serialize it before encoding
             info = {"username":"SERVER", "header":header, "message":message}
             self.transport.write(json.dumps(info).encode("utf-8"), addr)
+            handle = partial(self.handleTimeout, addr)
+            if header == "__PING__":
+                reactor.callLater(3, handle)
             return True
         except:
             return False
+
+
+    def handleTimeout(self, addr):
+        print("Timeout: no response received.")
+        self.clients.remove(addr)
+        self.ping.remove(addr)
 
 
     def __saveData__(self):

@@ -101,7 +101,7 @@ class Client(DatagramProtocol):
                     reactor.callInThread(self.sendCoRoutine)
 
             elif message["header"] == "__PING__":
-                handle = partial(self.sendMessage, "__OK__", "", self.address)
+                handle = partial(self.sendMessage, "__OK__", self.online, self.address)
                 reactor.callInThread(handle)
 
         else:
