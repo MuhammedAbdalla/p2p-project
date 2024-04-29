@@ -9,6 +9,7 @@ import json
 class Worker(DatagramProtocol):
     def __init__(self):
         self.clients = set()
+        self.clientObjs = set()
         self.cache = {}
         self.chats = {}
     
@@ -19,11 +20,20 @@ class Worker(DatagramProtocol):
         print(addr, ":", message)
 
         if message["header"] == "__INIT__":
+            self.updateClients()
             self.clients.add(addr)
             
             addresses = self.returnClients(addr)
 
             self.sendMessage("__CONNECT__", addresses, addr)
+
+
+    def updateClients(self):
+        for a in self.clients:
+            b = self.sendMessage("__PING__", "", a)
+            print(a, b)
+            if b == False:
+                self.clients.remove(a)
 
 
     def returnClients(self, addr):
@@ -35,9 +45,13 @@ class Worker(DatagramProtocol):
 
 
     def sendMessage(self, header, message, addr):
-        # package message into a json and serialize it before encoding
-        info = {"username":"SERVER", "header":header, "message":message}
-        self.transport.write(json.dumps(info).encode("utf-8"), addr)
+        try:
+            # package message into a json and serialize it before encoding
+            info = {"username":"SERVER", "header":header, "message":message}
+            self.transport.write(json.dumps(info).encode("utf-8"), addr)
+            return True
+        except:
+            return False
 
 
     def __saveData__(self):
@@ -54,11 +68,8 @@ class Worker(DatagramProtocol):
         return __cache__
 
 
-def exit_worker(listener, worker):
+def exit_worker(listener, worker: Worker):
     print("Interrupt signal recieved, worker stopped")
-    
-    for client in worker.clients:
-        client.listener.stopListening()
 
     # stop worker listener
     listener.stopListening()

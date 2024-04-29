@@ -29,6 +29,7 @@ class Client(DatagramProtocol):
         self.username = username
         self.uuid = hashFunction(username)
         self.connections = {}
+        self.online = True
         
         # connection settings
         self.addr = (host, port)
@@ -62,6 +63,7 @@ class Client(DatagramProtocol):
     def datagramReceived(self, datagram, addr):
         json_content = datagram.decode("utf-8")
         message = json.loads(json_content)
+        print(message)
 
         if addr == self.worker:
             if message["header"] == "__GETUSER__":
@@ -70,49 +72,75 @@ class Client(DatagramProtocol):
             elif message["header"] == "__CONNECT__":
                 print("Select a client\n", message["message"])
 
+                w_addr = None
+                w_port = None
+
+                while w_addr == None and w_port == None:
+                    try:
+                        w_addr = input("write address: ")
+                        w_port = int(input("write port: "))
+                    except Exception as e:
+                        if isinstance(e, EOFError):
+                            print("Input EOFError")
+                            return
+                        
+                        w_addr = None
+                        w_port = None
+
+                        continue
+                    break
+                    
+
                 # sanitize input
-                self.address = (input("write address: "), int(input("write port: ")))
+                self.address = (w_addr, w_port)
                 self.connected = False
 
                 # send connection validation to verify connection
-                self.sendMessage("__CONNECT__", "", self.address)
-            elif message["header"] == "__OK__":
-                self.connected = True
-                reactor.callInThread(self.sendCoRoutine)
+                if self.sendMessage("__CONNECT__", "", self.address):
+                    self.connected = True
+                    reactor.callInThread(self.sendCoRoutine)
+
+            elif message["header"] == "__PING__":
+                handle = partial(self.sendMessage, "__OK__", "", self.address)
+                reactor.callInThread(handle)
 
         else:
             if message["header"] == "__CONNECT__":
                 self.sendMessage("__OK__", "", addr)
 
-            elif message["header"] == "P2P":
+            elif message["header"] == "__P2P__":
                 print(message["username"], ":", message["message"])
 
 
     def sendMessage(self, header, message, addr):
         # package message into a json and serialize it before encoding
-        info = {"username":self.username, "header":header, "message":message}
-        self.transport.write(json.dumps(info).encode("utf-8"), addr)
+        try:
+            info = {"username":self.username, "header":header, "message":message}
+            self.transport.write(json.dumps(info).encode("utf-8"), addr)
+            return True
+        except:
+            return False
 
 
     def sendCoRoutine(self):
         while True:
-            self.sendMessage("P2P", input(">> ").encode("utf-8"), self.address)
+            self.sendMessage("__P2P__", input(">> ").encode("utf-8"), self.address)
 
 
 
-def exit_client():
+def exit_client(client: Client):
+    client.online = False
+    client.listener.stopListening()
     print("Interrupt signal recieved, client stopped")
-    listener.stopListening()
 
 if __name__ == "__main__":
     port = randint(1024, 4096)
     try:
         client = Client("TEST","localhost", port)
-        listener = reactor.listenUDP(port, client)
-        client.listener = listener
+        client.listener = reactor.listenUDP(port, client)
 
         # set up interrupt handler
-        handler = partial(exit_client, listener)
+        handler = partial(exit_client, client)
         reactor.addSystemEventTrigger('before', 'shutdown', handler)
 
         reactor.run()
