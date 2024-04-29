@@ -63,19 +63,18 @@ class Client(DatagramProtocol):
     def datagramReceived(self, datagram, addr):
         json_content = datagram.decode("utf-8")
         message = json.loads(json_content)
-        print(message)
+        # print(message)
 
         if addr == self.worker:
             if message["header"] == "__GETUSER__":
                 self.sendMessage("__GETUSER__", self.username, addr)
 
             elif message["header"] == "__CONNECT__":
-                print("Select a client\n", message["message"])
-
-                w_addr = None
-                w_port = None
-
+                print("Select a client\n", message["message"], "\n")
                 def connectTo():
+                    w_addr = None
+                    w_port = None
+
                     while w_addr == None and w_port == None:
                         try:
                             w_addr = input("write address: ")
@@ -91,27 +90,18 @@ class Client(DatagramProtocol):
 
                             continue
                         break
-                    
+
+                    self.address = (w_addr, w_port)
+                    self.connected = False
+                    self.sendCoRoutine()
+
                 reactor.callInThread(connectTo)
 
-                # sanitize input
-                self.address = (w_addr, w_port)
-                self.connected = False
-
-                # send connection validation to verify connection
-                if self.sendMessage("__CONNECT__", "", self.address):
-                    self.connected = True
-                    reactor.callInThread(self.sendCoRoutine)
-
             elif message["header"] == "__PING__":
-                handle = partial(self.sendMessage, "__OK__", self.online, addr)
-                reactor.callInThread(handle)
+                self.sendMessage("__PING__", self.online, addr)
 
         else:
-            if message["header"] == "__CONNECT__":
-                self.sendMessage("__OK__", "", addr)
-
-            elif message["header"] == "__P2P__":
+            if message["header"] == "__P2P__":
                 print(message["username"], ":", message["message"])
 
 
@@ -127,12 +117,22 @@ class Client(DatagramProtocol):
 
     def sendCoRoutine(self):
         while True:
-            self.sendMessage("__P2P__", input(">> ").encode("utf-8"), self.address)
-
+            try:
+                msg = input(">> ")
+                if msg == "::q::":
+                    print(f"disconnecting from {self.address[0]}:{self.address[1]}")
+                    self.sendMessage("__INIT__", "", self.worker)
+                    break
+                self.sendMessage("__P2P__", msg, self.address)
+            except Exception as e:
+                if isinstance(e, EOFError):
+                    print("Input EOFError")
+                    return
 
 
 def exit_client(client: Client):
     client.online = False
+    client.sendMessage("__STOP__", "", client.worker)
     client.listener.stopListening()
     print("Interrupt signal recieved, client stopped")
 

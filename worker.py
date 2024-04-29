@@ -33,12 +33,23 @@ class Worker(DatagramProtocol):
                 self.sendMessage("__CONNECT__", addresses, addr)
 
             reactor.callInThread(init)
-        elif message["header"] == "__OK__":
-            print(f"ping received from {addr}")
-            self.ping.remove(addr)
+        elif message["header"] == "__PING__":
+            timeout_call = getattr(self, f"{addr}_timeout", None)
+            if timeout_call.active():
+                timeout_call.cancel()
+
+            try:
+                self.ping.remove(addr)
+            except:
+                pass
+
+        elif message["header"] == "__STOP__":
+            try:
+                self.clients.remove(addr)
+            except:
+                pass
             
 
-            
     def updateClients(self):
         for a in self.clients:
             self.sendMessage("__PING__", "", a)
@@ -58,18 +69,27 @@ class Worker(DatagramProtocol):
             # package message into a json and serialize it before encoding
             info = {"username":"SERVER", "header":header, "message":message}
             self.transport.write(json.dumps(info).encode("utf-8"), addr)
-            handle = partial(self.handleTimeout, addr)
+
             if header == "__PING__":
-                reactor.callLater(3, handle)
+                self.addTimeout(addr, 5)
+
             return True
         except:
             return False
 
 
+    def addTimeout(self, addr, timeout):
+        # Add a timeout for a specific operation
+        setattr(self, f"{addr}_timeout", reactor.callLater(timeout, self.handleTimeout, addr))
+
+
     def handleTimeout(self, addr):
-        print("Timeout: no response received.")
-        self.clients.remove(addr)
-        self.ping.remove(addr)
+        print(f"Timeout: no response received from {addr}")
+        try:
+            self.clients.remove(addr)
+            self.ping.remove(addr)
+        except:
+            pass
 
 
     def __saveData__(self):
