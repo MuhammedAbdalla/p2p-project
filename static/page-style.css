@@ -1,0 +1,99 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    width: 40%; /* Adjust width as needed */
+    height: 80%; /* Allow height to expand based on content */
+    padding: 20px;
+    background-color: burlywood;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+} 
+
+
+.top {
+    display: flex;
+    flex-direction: column;
+    flex: .8 .2 90%;
+    padding: 20px;
+    background-color: white; /* Adjust as needed */
+}
+
+    .chatBox {
+        display: flex;
+        flex: .8 .2 80%;
+        padding: 20px;
+    }
+
+        .chats {
+            bottom: 0; /* Align the list to the bottom of the container */
+            list-style-type:none;
+        }
+
+            .U1Text {
+                display: flex;
+                background-color: lightskyblue;
+                margin-bottom: 5px;
+                border-radius: 5px;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            }
+
+            .U2Text {
+                display: flex;
+                background-color: lightskyblue;
+                margin-bottom: 5px;
+                border-radius: 5px;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            }
+
+            .dummyDiv {
+                flex: 1 1 55%;
+                background-color: white;
+            }
+
+            .textDiv {
+                flex: 1 1 45%;
+                padding: 5
+            }
+
+            .U1Text .textDiv {
+                text-align: right;
+            }
+
+            .U2Text .textDiv {
+                text-align: left;
+            }
+
+    .controls {
+        display: flex;
+        flex: .2 .8 20%;
+        padding: 20px;
+    }
+
+.bottom {
+    display: flex;
+    flex: .2 .8 10%;
+    padding: 20px;
+    background-color: wheat; /* Adjust as needed */
+}
+
+    #message {
+        flex: .8 .1 95%;
+    }
+
+    #sendMessage {
+        flex: .1 .9 5%;
+    }

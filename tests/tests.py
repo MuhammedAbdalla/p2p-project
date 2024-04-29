@@ -41,7 +41,6 @@ def test_client_success():
     pass
 
 
-
 def test_client_ping():
     pass
 
