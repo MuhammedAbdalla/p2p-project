@@ -13,6 +13,7 @@ class Worker(DatagramProtocol):
         self.cache = {}
         self.chats = {}
         self.ping = set()
+        self.alive = True
     
 
     def datagramReceived(self, datagram, addr):
@@ -106,29 +107,30 @@ class Worker(DatagramProtocol):
         return __cache__
 
 
-def exit_worker(listener, worker: Worker):
+def exit_worker(worker: Worker):
     print("Interrupt signal recieved, worker stopped")
-
+    worker.alive = False
     # stop worker listener
-    listener.stopListening()
+    worker.listener.stopListening()
 
 
-def start_worker():
-    try:
-        worker = Worker()
-        listener = reactor.listenUDP(9999, worker)
+def start_worker(worker: Worker, testMode=False):
+    try: 
+        worker.listener = reactor.listenUDP(9999, worker)
         print("worker live 127.0.0.1:9999")
         
         # set up interrupt handler
-        handler = partial(exit_worker, listener, worker)
+        handler = partial(exit_worker, worker.listener, worker)
         reactor.addSystemEventTrigger('before', 'shutdown', handler)
+        if not testMode:
+            reactor.run()
     except ReactorAlreadyRunning:
         print("worker already running")
 
 
 if __name__ == "__main__":
     try: 
-        start_worker()
-        reactor.run()
+        worker = Worker()
+        start_worker(worker)
     except KeyboardInterrupt:
         print("Exitting")

@@ -32,7 +32,7 @@ class Client(DatagramProtocol):
         self.online = True
         
         # connection settings
-        self.addr = (host, port)
+        self.myaddr = (host, port)
         self.address = None
         self.worker = ("127.0.0.1", 9999)
         self.listener = None
@@ -136,16 +136,24 @@ def exit_client(client: Client):
     client.listener.stopListening()
     print("Interrupt signal recieved, client stopped")
 
-if __name__ == "__main__":
-    port = randint(1024, 4096)
-    try:
-        client = Client("TEST","localhost", port)
-        client.listener = reactor.listenUDP(port, client)
 
+def start_client(client: Client, testMode=False):
+    try:
+        client.listener = reactor.listenUDP(client.myaddr[1], client)
         # set up interrupt handler
         handler = partial(exit_client, client)
         reactor.addSystemEventTrigger('before', 'shutdown', handler)
 
-        reactor.run()
+        if not testMode:
+            reactor.run()
+
     except CannotListenError:
         pass
+
+
+if __name__ == "__main__":
+    try:
+        client = Client(f"{__name__}","localhost", randint(1024, 4096))
+        start_client(client)
+    except KeyboardInterrupt:
+        print("Exitting")
