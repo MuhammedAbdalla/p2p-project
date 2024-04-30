@@ -13,15 +13,21 @@ def run_flask(port):
 
 @app.route('/messenger')
 def messenger():
+
     return render_template('messenger.html')
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
     global client_obj
-
-    strAddr = request.form['onlineUsers'].split(':')
-    client_obj.address = (strAddr[0], strAddr[1])
-
+    msg = request.form['message']
+    
+    if msg == "::q::":
+        print(f"disconnecting from {client_obj.address[0]}:{client_obj.address[1]}")
+        client_obj.sendMessage("__INIT__", "", client_obj.worker)
+        return redirect(url_for('connect'))
+    else:
+        client_obj.sendMessage("__P2P__", msg, client_obj.address)
+    
     # Redirect to a new page with a query parameter
     return redirect(url_for('messenger'))
 

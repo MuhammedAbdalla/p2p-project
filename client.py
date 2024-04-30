@@ -37,6 +37,7 @@ class Client(DatagramProtocol):
         # connection settings
         self.myaddr = (host, port)
         self.address = None
+        self.toUser = None
         self.worker = ("127.0.0.1", 9999)
         self.listener = None
 
@@ -93,11 +94,15 @@ class Client(DatagramProtocol):
                         #     w_addr = None
                         #     w_port = None
                         break
-
+                    
                     # self.sendCoRoutine()
-
-                threading.Thread(target=connectTo, daemon=True).start()
                 
+                threading.Thread(target=connectTo, daemon=True).start()
+
+                if self.chats.get(message["username"]) == None:
+                    self.chats[message["username"]] = []
+                    self.toUser = message["username"]
+
             elif message["header"] == "__RELOAD__":
                 self.connections = list()
                 for a in message["message"]:
@@ -107,8 +112,6 @@ class Client(DatagramProtocol):
         else:             
            if message["header"] == "__P2P__":
                 print(message["username"], ":", message["message"])
-                if self.chats.get(message["username"]) == None:
-                    self.chats[message["username"]] = []
                 self.chats[message["username"]].append((time.time, time.asctime, message["message"]))
 
 
@@ -130,6 +133,8 @@ class Client(DatagramProtocol):
                     print(f"disconnecting from {self.address[0]}:{self.address[1]}")
                     self.sendMessage("__INIT__", "", self.worker)
                     break
+
+                self.chats[self.toUser].append((time.time, time.asctime, msg))
                 self.sendMessage("__P2P__", msg, self.address)
             except Exception as e:
                 if isinstance(e, EOFError):
