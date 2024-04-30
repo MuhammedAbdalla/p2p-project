@@ -10,6 +10,7 @@ import time
 class Worker(DatagramProtocol):
     def __init__(self):
         self.clients = set()
+        self.client_user_translation = {}
         self.cache = {}
         self.chats = {}
         self.ping = set()
@@ -35,6 +36,7 @@ class Worker(DatagramProtocol):
 
             reactor.callInThread(init)
         elif message["header"] == "__PING__":
+            self.client_user_translation[addr] = message["message"]
             timeout_call = getattr(self, f"{addr}_timeout", None)
             if timeout_call.active():
                 timeout_call.cancel()
@@ -43,15 +45,27 @@ class Worker(DatagramProtocol):
                 self.ping.remove(addr)
             except:
                 pass
+        
+        elif message["header"] == "__RELOAD__":
+            def init():
+                self.updateClients()
+                print(self.ping)
+                while len(self.ping) > 0:
+                    time.sleep(0.25)
 
+                addresses = self.returnClients(addr)
+                self.sendMessage("__RELOAD__", addresses, addr)
+                
+            reactor.callInThread(init)
         elif message["header"] == "__STOP__":
             try:
                 self.clients.remove(addr)
             except:
                 pass
-            
+         
 
     def updateClients(self):
+        self.client_user_translation = {}
         for a in self.clients:
             self.sendMessage("__PING__", "", a)
             self.ping.add(a)
@@ -61,7 +75,7 @@ class Worker(DatagramProtocol):
         addresses = set()
         for a in self.clients:
             if a != addr:
-                addresses.add(a)
+                addresses.add((self.client_user_translation[a], a[0], a[1]))
         return list(addresses)
 
 
@@ -120,7 +134,7 @@ def start_worker(worker: Worker, testMode=False):
         print("worker live 127.0.0.1:9999")
         
         # set up interrupt handler
-        handler = partial(exit_worker, worker.listener, worker)
+        handler = partial(exit_worker, worker)
         reactor.addSystemEventTrigger('before', 'shutdown', handler)
         if not testMode:
             reactor.run()

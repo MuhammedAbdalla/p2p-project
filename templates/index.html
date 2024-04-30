@@ -7,37 +7,11 @@
     <title>Chat Messenger</title>
     <body>
         <div class="container">
-            <div class="content">
-                <div class="top">      
-                    <div class="chatbox">
-                        <ul class="chats">
-                            <li class="U1Text">
-                                <div class="dummyDiv"></div>
-                                <div class="textDiv">
-                                    Hey!
-                                </div>
-                            </li>
-                            <li class="U2Text">
-                                <div class="textDiv">
-                                    Hey!
-                                </div >
-                                <div class="dummyDiv"></div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="controls">
-                        <div class="users">
-                            <label for="onlineUsers"> Online </label>
-                            <select name="onlineUsers" id="onlineUsers">
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="bottom">
-                    <input type="text" id="message" name="message" placeholder="send a message." required>
-                    <button type="submit" id="sendMessage">Send</button>
-                </div>
-            </div>
+            <form action="{{ url_for('process_username') }}" method="post">
+                <label for="username">P2P Flask Chat</label>
+                <input type="text" id="username" name="username" placeholder="enter a username" required>
+                <button type="submit" id="login">Login</button>
+            </form>
         </div>
     </body>
 </html>

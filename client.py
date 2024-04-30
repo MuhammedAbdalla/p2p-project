@@ -6,7 +6,9 @@ from random import randint
 from functools import partial
 import hashlib
 import json
+import time
 import logging
+import threading
 
 
 def hashFunction(plaintext):
@@ -28,7 +30,8 @@ class Client(DatagramProtocol):
         # user info
         self.username = username
         self.uuid = hashFunction(username)
-        self.connections = {}
+        self.connections = []
+        self.chats = {}
         self.online = True
         
         # connection settings
@@ -66,43 +69,47 @@ class Client(DatagramProtocol):
         # print(message)
 
         if addr == self.worker:
-            if message["header"] == "__GETUSER__":
-                self.sendMessage("__GETUSER__", self.username, addr)
+            if message["header"] == "__PING__":
+                self.sendMessage("__PING__", self.username, addr)
 
             elif message["header"] == "__CONNECT__":
-                print("Select a client\n", message["message"], "\n")
-                def connectTo():
-                    w_addr = None
-                    w_port = None
+                print("Select a client\n", message["message"])
+                self.connections = list()
 
-                    while w_addr == None and w_port == None:
+                for a in message["message"]:
+                    self.connections.append({ 'value':f'{a[1]}:{a[2]}', 'label':f'{a[0]}' })
+                # print(self.connections)
+                def connectTo():
+                    while self.address == None:
                         try:
-                            w_addr = input("write address: ")
-                            w_port = int(input("write port: "))
-                            
+                        #     w_addr = input("write address: ")
+                        #     w_port = int(input("write port: "))
+                            continue
                         except Exception as e:
                             if isinstance(e, EOFError):
                                 print("Input EOFError")
                                 return
                             
-                            w_addr = None
-                            w_port = None
-
-                            continue
+                        #     w_addr = None
+                        #     w_port = None
                         break
 
-                    self.address = (w_addr, w_port)
-                    self.connected = False
-                    self.sendCoRoutine()
+                    # self.sendCoRoutine()
 
-                reactor.callInThread(connectTo)
+                threading.Thread(target=connectTo, daemon=True).start()
+                
+            elif message["header"] == "__RELOAD__":
+                self.connections = list()
+                for a in message["message"]:
+                    self.connections.append({ 'value':f'{a[1]}:{a[2]}', 'label':f'{a[0]}' })
+                print(self.connections)
 
-            elif message["header"] == "__PING__":
-                self.sendMessage("__PING__", self.online, addr)
-
-        else:
-            if message["header"] == "__P2P__":
+        else:             
+           if message["header"] == "__P2P__":
                 print(message["username"], ":", message["message"])
+                if self.chats.get(message["username"]) == None:
+                    self.chats[message["username"]] = []
+                self.chats[message["username"]].append((time.time, time.asctime, message["message"]))
 
 
     def sendMessage(self, header, message, addr):

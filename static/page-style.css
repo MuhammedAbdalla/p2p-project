@@ -90,10 +90,10 @@ body, html {
     background-color: wheat; /* Adjust as needed */
 }
 
-    #message {
+    #message, #username {
         flex: .8 .1 95%;
     }
 
-    #sendMessage {
+    #sendMessage, #login {
         flex: .1 .9 5%;
     }
