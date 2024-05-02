@@ -7,9 +7,6 @@ from functools import partial
 import hashlib
 import json
 import time
-import logging
-import threading
-
 
 def hashFunction(plaintext):
     if plaintext == None:

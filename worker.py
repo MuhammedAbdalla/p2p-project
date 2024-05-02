@@ -4,7 +4,6 @@ from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 from functools import partial
 import json
-import time
 
 
 class Worker(DatagramProtocol):
@@ -34,7 +33,7 @@ class Worker(DatagramProtocol):
                 self.sendMessage("__CONNECT__", addresses, addr)
 
             reactor.callInThread(init)
-            
+
         elif message["header"] == "__PING__":
             self.client_user_translation[addr] = message["message"]
             timeout_call = getattr(self, f"{addr}_timeout", None)
