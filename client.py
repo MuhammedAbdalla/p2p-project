@@ -203,7 +203,7 @@ def start_client(client: Client, testMode=False):
 
 if __name__ == "__main__":
     try:
-        client = Client(input("enter your username:\n>> "),"localhost", randint(1024, 4096))
+        client = Client(input("enter your username:\n>> "),"localhost", randint(5000, 9998))
         start_client(client)
     except KeyboardInterrupt:
         print("Exitting")
