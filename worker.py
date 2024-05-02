@@ -24,23 +24,22 @@ class Worker(DatagramProtocol):
 
         if message["header"] == "__INIT__":
             def init():
+                self.clients.add(addr)
                 self.updateClients()
                 print(self.ping)
                 while len(self.ping) > 0:
-                    time.sleep(0.25)
-                
-                self.clients.add(addr)
+                    pass
 
                 addresses = self.returnClients(addr)
                 self.sendMessage("__CONNECT__", addresses, addr)
 
             reactor.callInThread(init)
+            
         elif message["header"] == "__PING__":
             self.client_user_translation[addr] = message["message"]
             timeout_call = getattr(self, f"{addr}_timeout", None)
             if timeout_call.active():
                 timeout_call.cancel()
-
             try:
                 self.ping.remove(addr)
             except:
@@ -51,7 +50,7 @@ class Worker(DatagramProtocol):
                 self.updateClients()
                 print(self.ping)
                 while len(self.ping) > 0:
-                    time.sleep(0.25)
+                    pass
 
                 addresses = self.returnClients(addr)
                 self.sendMessage("__RELOAD__", addresses, addr)
@@ -86,7 +85,7 @@ class Worker(DatagramProtocol):
             self.transport.write(json.dumps(info).encode("utf-8"), addr)
 
             if header == "__PING__":
-                self.addTimeout(addr, 5)
+                self.addTimeout(addr, 3)
 
             return True
         except:
@@ -138,7 +137,7 @@ def start_worker(worker: Worker, testMode=False):
         reactor.addSystemEventTrigger('before', 'shutdown', handler)
         if not testMode:
             reactor.run()
-    except ReactorAlreadyRunning:
+    except: 
         print("worker already running")
 
 

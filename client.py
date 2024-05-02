@@ -74,46 +74,77 @@ class Client(DatagramProtocol):
                 self.sendMessage("__PING__", self.username, addr)
 
             elif message["header"] == "__CONNECT__":
-                print("Select a client\n", message["message"])
+
+                print("Select a client:")
+                for i,u in enumerate(message["message"]):
+                    print(f" ({i+1}):", u)
+
                 self.connections = list()
 
                 for a in message["message"]:
                     self.connections.append({ 'value':f'{a[1]}:{a[2]}', 'label':f'{a[0]}' })
+                    
                 # print(self.connections)
                 def connectTo():
+                    index = None
                     while self.address == None:
                         try:
-                        #     w_addr = input("write address: ")
-                        #     w_port = int(input("write port: "))
-                            continue
+                            index = int(input("select an address\nEnter -1 to reload\nEnter -2 to display messages\n>> "))
+                            if index == -1:
+                                self.sendMessage("__INIT__", "", self.worker)
+                                return
+                            if index == -2:
+                                print("Users:")
+                                for u in self.chats.keys():
+                                    print(u)
+
+                                try:
+                                    u = input("select a user by name\n>> ")
+
+                                    for chat in self.chats[u]:
+                                        print(chat[2],":",chat[3])
+                                        
+                                except:
+                                    pass
+
+                                self.sendMessage("__INIT__", "", self.worker) 
+                                return
+
+                            self.address = (message["message"][index-1][1], message["message"][index-1][2])
+                            self.toUser = message["message"][index-1][0]
+                            
+                            if self.chats.get(self.toUser) == None:
+                                self.chats[self.toUser] = []
+
                         except Exception as e:
                             if isinstance(e, EOFError):
                                 print("Input EOFError")
                                 return
                             
-                        #     w_addr = None
-                        #     w_port = None
+                            index = None
+                            continue
                         break
-                    
-                    # self.sendCoRoutine()
-                
-                threading.Thread(target=connectTo, daemon=True).start()
 
-                if self.chats.get(message["username"]) == None:
-                    self.chats[message["username"]] = []
-                    self.toUser = message["username"]
+                    self.sendCoRoutine()
+
+                reactor.callInThread(connectTo)
+                
 
             elif message["header"] == "__RELOAD__":
                 self.connections = list()
                 for a in message["message"]:
                     self.connections.append({ 'value':f'{a[1]}:{a[2]}', 'label':f'{a[0]}' })
-                print(self.connections)
+                # print(self.connections)
 
         else:             
            if message["header"] == "__P2P__":
                 print(message["username"], ":", message["message"])
-                self.chats[message["username"]].append((time.time, time.asctime, message["message"]))
 
+                if self.chats.get(message["username"]) == None:
+                    self.chats[message["username"]] = []
+
+                self.chats[message["username"]].append((time.time(), time.asctime(), message["username"], message["message"]))
+                # print(self.chats[message["username"]])
 
     def sendMessage(self, header, message, addr):
         # package message into a json and serialize it before encoding
@@ -127,19 +158,29 @@ class Client(DatagramProtocol):
 
     def sendCoRoutine(self):
         while True:
+            if self.uuid == None:
+                print("unauthorized connection")
+                return
             try:
                 msg = input(">> ")
                 if msg == "::q::":
                     print(f"disconnecting from {self.address[0]}:{self.address[1]}")
+                    print('\n\n\n')
+                    self.address = None
                     self.sendMessage("__INIT__", "", self.worker)
                     break
+                
 
-                self.chats[self.toUser].append((time.time, time.asctime, msg))
+                if self.chats.get(self.toUser) == None:
+                    self.chats[self.toUser] = []
+                self.chats[self.toUser].append((time.time(), time.asctime(), self.username, msg))
+
                 self.sendMessage("__P2P__", msg, self.address)
             except Exception as e:
                 if isinstance(e, EOFError):
                     print("Input EOFError")
                     return
+                print(e)
 
 
 def exit_client(client: Client):
@@ -165,7 +206,7 @@ def start_client(client: Client, testMode=False):
 
 if __name__ == "__main__":
     try:
-        client = Client(f"{__name__}","localhost", randint(1024, 4096))
+        client = Client(input("enter your username:\n>> "),"localhost", randint(1024, 4096))
         start_client(client)
     except KeyboardInterrupt:
         print("Exitting")

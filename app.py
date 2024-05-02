@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect
 from random import randint
+from multiprocessing import Process
 import client
 import worker
 import threading
@@ -68,6 +69,14 @@ if __name__ == "__main__":
     flask_thread = threading.Thread(target=run_flask, args=(port,), daemon=True)
     flask_thread.start()
 
+    try:
+        w = worker.Worker()
+        worker_process = Process(target=worker.start_worker, args=(w,))
+        worker_process.start()
+    except:
+        pass
+
+    print(f"starting client on {port}")
     client_obj = client.Client("", '127.0.0.1', port)
     client.start_client(client_obj)
 
