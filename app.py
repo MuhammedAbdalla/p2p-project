@@ -65,7 +65,7 @@ def process_username():
 
 
 if __name__ == "__main__":
-    port = randint(5000, 9999)  # Choose a random port between 5000 and 9999
+    port = randint(5000, 9998)  # Choose a random port between 5000 and 9998
     flask_thread = threading.Thread(target=run_flask, args=(port,), daemon=True)
     flask_thread.start()
 
